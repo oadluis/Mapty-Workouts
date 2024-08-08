@@ -17,6 +17,8 @@ class Workout {
 }
 
 class Running extends Workout {
+  type = 'running';
+
   constructor(coords, distance, duration, cadence) {
     super(coords, distance, duration);
     this.cadence = cadence;
@@ -31,6 +33,8 @@ class Running extends Workout {
 }
 
 class Cycling extends Workout {
+  type = 'cycling';
+
   constructor(coords, distance, duration, elevationGain) {
     super(coords, distance, duration);
     this.elevationGain = elevationGain;
@@ -58,11 +62,10 @@ const inputElevation = document.querySelector('.form__input--elevation');
 class App {
   #map;
   #mapEvent;
+  #workouts = [];
   constructor() {
     this._getPosition();
-
     form.addEventListener('submit', this._newWorkout.bind(this));
-
     inputType.addEventListener('change', this._toggleElevationField);
   }
 
@@ -118,6 +121,8 @@ class App {
     const type = inputType.value;
     const distance = Number(inputDistance.value);
     const duration = Number(inputDuration.value);
+    const { lat, lng } = this.#mapEvent.latlng;
+    let workout;
 
     // Verificar se os dados são válido
 
@@ -136,6 +141,7 @@ class App {
       ) {
         return alert(`As entradas devem ser números positivos!`);
       }
+      workout = new Running([lat, lng], distance, duration, cadence);
     }
 
     // Se o treino for pedalar, crie um objeto pedalar
@@ -147,27 +153,16 @@ class App {
         !allPositive(distance, duration)
       )
         return alert(`As entradas devem ser números positivos!`);
+
+      workout = new Cycling([lat, lng], distance, duration, elevation);
     }
 
     // Adicionar o novo objeto na array de treinos
+    this.#workouts.push(workout);
+    console.log(workout);
+
     // Rederizar no mapa como um marcador
-    //display marker
-    const { lat, lng } = this.#mapEvent.latlng;
-    L.marker([lat, lng], {})
-      .addTo(this.#map)
-      .bindPopup(
-        L.popup({
-          maxWidth: 250,
-          minWidth: 100,
-          autoClose: false,
-          closeOnClick: false,
-          closeOnEscapeKey: false,
-          className: 'running-popup',
-          content: 'Corrida realizada em 20 de Julho',
-        })
-      )
-      .setPopupContent(`Corrida realizada em ${this.date}`)
-      .openPopup();
+    this.renderWorkoutMarker(workout);
 
     // Renderizar o novo treino na lista
 
@@ -177,6 +172,25 @@ class App {
       inputElevation.value =
       inputCadence.value =
         '';
+  }
+
+  renderWorkoutMarker(workout) {
+    //display marker
+    L.marker(workout.coords)
+      .addTo(this.#map)
+      .bindPopup(
+        L.popup({
+          maxWidth: 250,
+          minWidth: 100,
+          autoClose: false,
+          closeOnClick: false,
+          closeOnEscapeKey: false,
+          className: `${workout.type}-popup`,
+          content: 'Corrida realizada em 20 de Julho',
+        })
+      )
+      .setPopupContent('workout')
+      .openPopup();
   }
 }
 
